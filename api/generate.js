@@ -4,11 +4,9 @@ import admin from "firebase-admin";
 // Initialize Firebase Admin SDK only once
 if (!admin.apps.length) {
   try {
-    // Decode the Base64 string from the environment variable back into JSON before parsing
     const encodedKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    // This is the line that will crash if the Base64 key has hidden whitespace!
-    const decodedKeyString = Buffer.from(encodedKey, 'base64').toString('utf8');
-// ADD .trim() to strip away any hidden whitespace/newlines before JSON.parse
+    // CRITICAL FIX: .trim() ensures no hidden whitespace breaks JSON.parse
+    const decodedKeyString = Buffer.from(encodedKey, "base64").toString("utf8");
     const serviceAccount = JSON.parse(decodedKeyString.trim());
 
     admin.initializeApp({
@@ -36,6 +34,13 @@ export default async (request, response) => {
     return response.status(405).json({ error: "Method Not Allowed" });
   }
 
+  const { topic } = request.body;
+  if (!topic) {
+    return response
+      .status(400)
+      .json({ error: "Missing 'topic' in request body." });
+  }
+
   // 1. Get the user identifier (IP address)
   const userIp =
     request.headers["x-forwarded-for"] || request.socket.remoteAddress;
@@ -43,7 +48,7 @@ export default async (request, response) => {
   const now = Date.now();
   const windowStart = now - WINDOW_MINUTES * 60 * 1000; // 1 minute ago
 
-  // --- RATE LIMIT CHECK & TRANSACTION ---
+  // --- RATE LIMIT CHECK & UPDATE (Inside a TRANSACTION) ---
   try {
     await db.runTransaction(async (t) => {
       const doc = await t.get(rateLimitRef);
@@ -66,33 +71,7 @@ export default async (request, response) => {
       requests.push(now);
       t.set(rateLimitRef, { requests });
 
-      // --- GEMINI API CALL (ONLY if rate limit is passed) ---
-      const { topic } = request.body;
-      if (!topic) {
-        throw {
-          code: "bad-request",
-          message: "Missing 'topic' in request body.",
-        };
-      }
-
-      const prompt = `You are a social media virality expert. Generate 5 short, attention-grabbing video hooks for a vertical video app (like TikTok or Reels). The hooks must be under 15 words and related to the following topic: "${topic}". Format each hook on a new line.`;
-
-      const result = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-          temperature: 0.8,
-        },
-      });
-
-      const hooks = result.text
-        .trim()
-        .split("\n")
-        .map((h) => h.trim())
-        .filter((h) => h.length > 0);
-
-      // Send the response outside the transaction
-      response.status(200).json({ hooks });
+      // Transaction succeeds here, allowing execution to proceed outside the block.
     });
   } catch (error) {
     if (error.code === "rate-limit-exceeded") {
@@ -103,14 +82,39 @@ export default async (request, response) => {
         retryAfter: error.reset,
       });
     }
-    if (error.code === "bad-request") {
-      return response.status(400).json({ error: error.message });
-    }
 
-    console.error("Server Error during API call or Rate Limit:", error);
+    console.error("Server Error during Rate Limit Transaction:", error);
     // Log the actual server crash
     return response
       .status(500)
-      .json({ error: "Internal Server Error during processing." });
+      .json({ error: "Internal Server Error during rate limit check." });
+  }
+
+  // --- GEMINI API CALL (Safely executed ONLY if rate limit passed) ---
+  try {
+    const prompt = `You are a social media virality expert. Generate 5 short, attention-grabbing video hooks for a vertical video app (like TikTok or Reels). The hooks must be under 15 words and related to the following topic: "${topic}". Format each hook on a new line.`;
+
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        temperature: 0.8,
+      },
+    });
+
+    const hooks = result.text
+      .trim()
+      .split("\n")
+      .map((h) => h.trim())
+      .filter((h) => h.length > 0);
+
+    // Send the final successful response
+    return response.status(200).json({ hooks });
+  } catch (error) {
+    console.error("Server Error during Gemini API call:", error);
+    // Handle specific errors for the AI call
+    return response
+      .status(500)
+      .json({ error: "Internal Server Error during hook generation." });
   }
 };
