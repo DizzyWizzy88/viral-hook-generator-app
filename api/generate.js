@@ -22,7 +22,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
+//const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 // --- Rate Limiting Configuration ---
 const MAX_REQUESTS = 5; // Max requests allowed
