@@ -14,7 +14,7 @@
   }, 
   "scripts": {
     "build": "mkdir -p public && cp index.html public/index.html",
-    "start": "echo 'This is a serverless function, run in Vercel'",
+    "start": "echo \"This is a serverless function, run in Vercel\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
