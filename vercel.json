@@ -1,4 +1,9 @@
 {
   "outputDirectory": "public",
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "npm install --legacy-peer-deps",
+  "build": {
+    "env": {
+      "NODE_VERSION": "18.x"
+    }
+  }
 }
