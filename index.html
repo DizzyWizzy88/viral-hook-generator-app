@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Viral Hook Generator</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f7f6;
+        color: #333;
+        text-align: center;
+      }
+      h1 {
+        color: #4a56e2;
+        margin-bottom: 20px;
+      }
+      #hook-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      #topic-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      #generate-button {
+        padding: 12px 25px;
+        background-color: #4a56e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      #generate-button:hover:not(:disabled) {
+        background-color: #3842c1;
+      }
+      #generate-button:disabled {
+        background-color: #8fa3f8;
+        cursor: not-allowed;
+      }
+      #status-message {
+        margin-top: 20px;
+        font-weight: bold;
+        color: #555;
+      }
+      #results-container {
+        margin-top: 30px;
+        text-align: left;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      #results-container ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      #results-container li {
+        padding: 10px 0;
+        border-bottom: 1px dashed #eee;
+      }
+      #results-container li:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎬 Viral Hook Generator</h1>
+    <form id="hook-form">
+      <input
+        type="text"
+        id="topic-input"
+        placeholder="Enter your video topic (e.g., 'dog training tips')"
+        required
+      />
+      <button type="submit" id="generate-button">Generate Hooks</button>
+    </form>
+
+    <div id="status-message"></div>
+
+    <div id="results-container"></div>
+
+    <script>
+      const form = document.getElementById("hook-form");
+      const topicInput = document.getElementById("topic-input");
+      const resultsContainer = document.getElementById("results-container");
+      const statusMessage = document.getElementById("status-message");
+      const generateButton = document.getElementById("generate-button");
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const topic = topicInput.value.trim();
+        if (!topic) return;
+
+        resultsContainer.innerHTML = "";
+        statusMessage.textContent = "Generating viral hooks... please wait.";
+        generateButton.disabled = true;
+
+        try {
+          // Call your Vercel API endpoint
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ topic: topic }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            statusMessage.textContent = `Error: ${
+              errorData.error || "Server responded with an unknown error."
+            }`;
+            return;
+          }
+
+          const data = await response.json();
+
+          statusMessage.textContent = "Hooks generated successfully!";
+
+          if (data.hooks && data.hooks.length > 0) {
+            const list = document.createElement("ul");
+            data.hooks.forEach((hook) => {
+              const listItem = document.createElement("li");
+              listItem.textContent = hook;
+              list.appendChild(listItem);
+            });
+            resultsContainer.appendChild(list);
+          } else {
+            statusMessage.textContent =
+              "No hooks were generated. Try a different topic.";
+          }
+        } catch (error) {
+          console.error("Fetch error:", error);
+          statusMessage.textContent =
+            "A connection error occurred. Check your network.";
+        } finally {
+          generateButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
