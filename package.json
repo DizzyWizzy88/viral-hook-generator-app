@@ -8,5 +8,13 @@
     "firebase-admin": "^11.11.0",
     "stripe": "^14.15.0",
     "resend": "^3.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "build": "echo 'Nothing to build'",
+    "start": "echo 'This is a serverless function, run in Vercel'",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
