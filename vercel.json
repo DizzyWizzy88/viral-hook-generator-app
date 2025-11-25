@@ -2,7 +2,7 @@
   "outputDirectory": ".",
   "functions": {
     "api/**/*.js": {
-      "runtime": "@vercel/node@18.15.0"
+      "runtime": "@vercel/node@18.x"
     }
   },
   "installCommand": "npm install --legacy-peer-deps"
