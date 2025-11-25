@@ -1,0 +1,12 @@
+{
+  "name": "viral-hook-generator-api",
+  "version": "1.0.0",
+  "description": "Secure API for the Viral Hook Generator.",
+  "main": "api/generate.js",
+  "dependencies": {
+    "@google/genai": "^0.1.0",
+    "firebase-admin": "^11.11.0",
+    "stripe": "^14.15.0",
+    "resend": "^3.0.0"
+  }
+}
