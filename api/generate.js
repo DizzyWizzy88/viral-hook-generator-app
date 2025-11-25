@@ -4,14 +4,20 @@ import admin from "firebase-admin";
 // Initialize Firebase Admin SDK only once
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    // Decode the Base64 string from the environment variable back into JSON before parsing
+    const encodedKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const decodedKeyString = Buffer.from(encodedKey, "base64").toString("utf8");
+    const serviceAccount = JSON.parse(decodedKeyString);
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    // Fallback for local development or if key is just a placeholder
-    admin.initializeApp();
+    // Throw an error to ensure Vercel logs the runtime crash if the key is still bad
+    throw new Error(
+      "Firebase Initialization Error: Check FIREBASE_SERVICE_ACCOUNT_KEY Base64 format."
+    );
   }
 }
 
@@ -23,18 +29,19 @@ const MAX_REQUESTS = 5; // Max requests allowed
 const WINDOW_MINUTES = 1; // within this time window (in minutes)
 
 export default async (request, response) => {
+  // Basic method check
   if (request.method !== "POST") {
     return response.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // 1. Get the user identifier (IP address is the easiest for anonymous users)
+  // 1. Get the user identifier (IP address)
   const userIp =
     request.headers["x-forwarded-for"] || request.socket.remoteAddress;
   const rateLimitRef = db.collection("rateLimits").doc(userIp);
   const now = Date.now();
   const windowStart = now - WINDOW_MINUTES * 60 * 1000; // 1 minute ago
 
-  // --- RATE LIMIT CHECK ---
+  // --- RATE LIMIT CHECK & TRANSACTION ---
   try {
     await db.runTransaction(async (t) => {
       const doc = await t.get(rateLimitRef);
@@ -44,10 +51,9 @@ export default async (request, response) => {
       requests = requests.filter((timestamp) => timestamp > windowStart);
 
       if (requests.length >= MAX_REQUESTS) {
-        // If over the limit, throw an error to exit transaction
+        // If over the limit, throw a custom error object to exit transaction
         const resetTime = new Date(requests[0] + WINDOW_MINUTES * 60 * 1000);
 
-        // We use a custom object to carry the error info out of the transaction
         throw {
           code: "rate-limit-exceeded",
           reset: resetTime.getTime(),
@@ -89,6 +95,7 @@ export default async (request, response) => {
   } catch (error) {
     if (error.code === "rate-limit-exceeded") {
       console.warn(`Rate limit exceeded for IP: ${userIp}`);
+      // Return 429 response to the client
       return response.status(429).json({
         error: `Too Many Requests. Limit of ${MAX_REQUESTS} requests per ${WINDOW_MINUTES} minute(s) exceeded.`,
         retryAfter: error.reset,
@@ -99,6 +106,7 @@ export default async (request, response) => {
     }
 
     console.error("Server Error during API call or Rate Limit:", error);
+    // Log the actual server crash
     return response
       .status(500)
       .json({ error: "Internal Server Error during processing." });
