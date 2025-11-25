@@ -6,229 +6,160 @@
     <title>Viral Hook Generator</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
         margin: 0;
         padding: 20px;
         background-color: #f4f7f6;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-      }
-      .container {
-        background-color: #ffffff;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        max-width: 500px;
-        width: 100%;
+        color: #333;
+        text-align: center;
       }
       h1 {
-        color: #2c3e50;
-        text-align: center;
+        color: #4a56e2;
         margin-bottom: 20px;
       }
-      p.limit-info {
-        color: #e74c3c;
-        text-align: center;
-        margin-bottom: 15px;
-        font-weight: bold;
+      #hook-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
-      textarea {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #bdc3c7;
-        border-radius: 6px;
-        resize: vertical;
-        min-height: 80px;
-        box-sizing: border-box;
-      }
-      button {
+      #topic-input {
         width: 100%;
         padding: 12px;
-        background-color: #3498db;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      #generate-button {
+        padding: 12px 25px;
+        background-color: #4a56e2;
         color: white;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 16px;
         cursor: pointer;
         transition: background-color 0.3s;
       }
-      button:hover:not(:disabled) {
-        background-color: #2980b9;
+      #generate-button:hover:not(:disabled) {
+        background-color: #3842c1;
       }
-      button:disabled {
-        background-color: #95a5a6;
+      #generate-button:disabled {
+        background-color: #8fa3f8;
         cursor: not-allowed;
       }
-      .results-section {
+      #status-message {
         margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #ecf0f1;
+        font-weight: bold;
+        color: #555;
       }
-      .hook-list {
-        list-style: none;
+      #results-container {
+        margin-top: 30px;
+        text-align: left;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      #results-container ul {
+        list-style-type: none;
         padding: 0;
       }
-      .hook-list li {
-        background-color: #ecf0f1;
-        padding: 10px 15px;
-        margin-bottom: 8px;
-        border-radius: 4px;
-        font-size: 1.1em;
-        word-wrap: break-word;
+      #results-container li {
+        padding: 10px 0;
+        border-bottom: 1px dashed #eee;
       }
-      .monetization {
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f1c40f;
-        color: #34495e;
-        border-radius: 6px;
-        text-align: center;
-      }
-      .monetization a {
-        color: #34495e;
-        font-weight: bold;
+      #results-container li:last-child {
+        border-bottom: none;
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>🚀 Viral Hook Generator</h1>
-
-      <p class="limit-info" id="limit-display">Free Generations Left: 5/5</p>
-
-      <textarea
+    <h1>🎬 Viral Hook Generator</h1>
+    <form id="hook-form">
+      <input
+        type="text"
         id="topic-input"
-        placeholder="Enter your product, niche, or topic (e.g., 'Handmade organic dog treats', 'Virtual reality fitness app')."
-      ></textarea>
+        placeholder="Enter your video topic (e.g., 'dog training tips')"
+        required
+      />
+      <button type="submit" id="generate-button">Generate Hooks</button>
+    </form>
 
-      <button id="generate-button">Generate Viral Hooks</button>
+    <div id="status-message"></div>
 
-      <div class="results-section">
-        <h2>Results</h2>
-        <ul class="hook-list" id="results-list"></ul>
-      </div>
-
-      <div class="monetization" id="monetization-ad">
-        <p>
-          Hit your limit? Get **Unlimited Generations** and **Pro Features**!
-        </p>
-        <a href="#" target="_blank">Upgrade to Pro Now!</a>
-      </div>
-    </div>
+    <div id="results-container"></div>
 
     <script>
-      const MAX_GENERATIONS = 5;
-      const GENERATION_KEY = "dailyGenerations";
-      const LAST_DATE_KEY = "lastGenerationDate";
+      const form = document.getElementById("hook-form");
+      const topicInput = document.getElementById("topic-input");
+      const resultsContainer = document.getElementById("results-container");
+      const statusMessage = document.getElementById("status-message");
+      const generateButton = document.getElementById("generate-button");
 
-      const inputEl = document.getElementById("topic-input");
-      const buttonEl = document.getElementById("generate-button");
-      const limitDisplayEl = document.getElementById("limit-display");
-      const resultsListEl = document.getElementById("results-list");
-      const monetizationEl = document.getElementById("monetization-ad");
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-      let generationsUsed = 0;
+        const topic = topicInput.value.trim();
+        if (!topic) return;
 
-      // --- 1. Daily Limit and Monetization Logic ---
-      function checkDailyLimit() {
-        const today = new Date().toDateString();
-        const lastDate = localStorage.getItem(LAST_DATE_KEY);
-
-        // Reset count if it's a new day
-        if (lastDate !== today) {
-          localStorage.setItem(LAST_DATE_KEY, today);
-          localStorage.setItem(GENERATION_KEY, 0);
-        }
-
-        generationsUsed = parseInt(localStorage.getItem(GENERATION_KEY) || 0);
-        updateUI();
-      }
-
-      function updateUI() {
-        const remaining = MAX_GENERATIONS - generationsUsed;
-        limitDisplayEl.textContent = `Free Generations Left: ${remaining}/${MAX_GENERATIONS}`;
-
-        if (remaining <= 0) {
-          buttonEl.disabled = true;
-          buttonEl.textContent = "Limit Reached (Upgrade Below)";
-          limitDisplayEl.style.color = "#e74c3c";
-          monetizationEl.style.display = "block";
-        } else {
-          buttonEl.disabled = false;
-          buttonEl.textContent = "Generate Viral Hooks";
-          limitDisplayEl.style.color = "#2c3e50";
-          monetizationEl.style.display = "none";
-        }
-      }
-
-      // --- 2. Core AI Function (Placeholder) ---
-      async function generateHooks(topic) {
-        // --- IMPORTANT: This is the placeholder for your secure API call ---
-
-        // In a real deployed app, this fetch call would hit your secure, free backend function (e.g., Vercel/Netlify/Firebase Function)
-
-        // You would NOT put your actual Gemini API key here in the front end for security.
-
-        console.log(`[DEV NOTE]: Sending topic to secure backend: "${topic}"`);
-
-        // Simulate a real API call delay and response
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve([
-              `Wait! You've been scrolling for 15 minutes.`,
-              `The 3 biggest lies your teacher told you about money.`,
-              `Stop scrolling! This changes everything about [TOPIC].`,
-              `I spent $10,000 to learn this one trick.`,
-              `Why I quit my job to sell [TOPIC].`,
-            ]);
-          }, 1500); // Simulated 1.5 second API response time
-        });
-      }
-
-      // --- 3. Event Handler ---
-      buttonEl.addEventListener("click", async () => {
-        const topic = inputEl.value.trim();
-
-        if (!topic) {
-          alert("Please enter a topic before generating hooks.");
-          return;
-        }
-
-        if (generationsUsed >= MAX_GENERATIONS) {
-          // This check should already be handled by the button state, but good to double check
-          alert("Daily limit reached. Please upgrade to Pro.");
-          return;
-        }
-
-        buttonEl.disabled = true;
-        buttonEl.textContent = "Generating...";
-        resultsListEl.innerHTML = "<li>Working magic...</li>";
+        resultsContainer.innerHTML = "";
+        statusMessage.textContent = "Generating viral hooks... please wait.";
+        generateButton.disabled = true;
 
         try {
-          const hooks = await generateHooks(topic);
+          // Call your Vercel API endpoint
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ topic: topic }),
+          });
 
-          // Display results
-          resultsListEl.innerHTML = hooks
-            .map((hook) => `<li>${hook}</li>`)
-            .join("");
+          // Check for server errors (including rate limiting)
+          if (!response.ok) {
+            const errorData = await response.json();
+            statusMessage.textContent = `Error: ${
+              errorData.error || "Server responded with an unknown error."
+            }`;
+            return;
+          }
 
-          // Increment usage count only upon successful generation
-          generationsUsed++;
-          localStorage.setItem(GENERATION_KEY, generationsUsed);
+          const data = await response.json();
+
+          statusMessage.textContent = "Hooks generated successfully!";
+
+          // Display the results
+          if (data.hooks && data.hooks.length > 0) {
+            const list = document.createElement("ul");
+            data.hooks.forEach((hook) => {
+              const listItem = document.createElement("li");
+              listItem.textContent = hook;
+              list.appendChild(listItem);
+            });
+            resultsContainer.appendChild(list);
+          } else {
+            statusMessage.textContent =
+              "No hooks were generated. Try a different topic.";
+          }
         } catch (error) {
-          console.error("Generation failed:", error);
-          resultsListEl.innerHTML =
-            "<li>An error occurred. Please try again.</li>";
+          console.error("Fetch error:", error);
+          statusMessage.textContent =
+            "A connection error occurred. Check your network.";
         } finally {
-          updateUI(); // Update counter and button state
+          generateButton.disabled = false;
         }
       });
-
-      // Initialize the app state
-      checkDailyLimit();
     </script>
   </body>
 </html>

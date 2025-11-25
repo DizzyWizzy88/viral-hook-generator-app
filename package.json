@@ -1,4 +1,6 @@
-{
+"scripts": {
+    "build": "mkdir -p public && cp index.html public/index.html",
+    "start": "echo 'T{
   "name": "viral-hook-generator-api",
   "version": "1.0.1",
   "description": "Secure API for the Viral Hook Generator.",
@@ -17,4 +19,6 @@
     "start": "echo 'This is a serverless function, run in Vercel'",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
-}
+}his is a serverless function, run in Vercel'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
