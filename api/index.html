@@ -126,7 +126,6 @@
             body: JSON.stringify({ topic: topic }),
           });
 
-          // Check for server errors (including rate limiting)
           if (!response.ok) {
             const errorData = await response.json();
             statusMessage.textContent = `Error: ${
@@ -139,7 +138,6 @@
 
           statusMessage.textContent = "Hooks generated successfully!";
 
-          // Display the results
           if (data.hooks && data.hooks.length > 0) {
             const list = document.createElement("ul");
             data.hooks.forEach((hook) => {
