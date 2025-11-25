@@ -1,10 +1,10 @@
 {
   "outputDirectory": ".",
   "installCommand": "npm install --legacy-peer-deps",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "/",
+      "dest": "/index.html"
     }
   ]
 }
