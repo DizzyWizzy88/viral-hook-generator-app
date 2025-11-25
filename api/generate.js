@@ -7,8 +7,9 @@ if (!admin.apps.length) {
     // Decode the Base64 string from the environment variable back into JSON before parsing
     const encodedKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     // This is the line that will crash if the Base64 key has hidden whitespace!
-    const decodedKeyString = Buffer.from(encodedKey, "base64").toString("utf8");
-    const serviceAccount = JSON.parse(decodedKeyString);
+    const decodedKeyString = Buffer.from(encodedKey, 'base64').toString('utf8');
+// ADD .trim() to strip away any hidden whitespace/newlines before JSON.parse
+    const serviceAccount = JSON.parse(decodedKeyString.trim());
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
