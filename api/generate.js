@@ -14,6 +14,7 @@ if (!admin.apps.length) {
     console.log("FIREBASE INITIALIZATION SUCCESSFUL");
   } catch (error) {
     console.error("FIREBASE KEY ERROR:", error);
+    // If this part crashes, the Base64 key is still bad.
     throw new Error("Firebase Key Malformed or Invalid.");
   }
 }
@@ -23,6 +24,7 @@ export default async (request, response) => {
   // This simple read confirms the key worked and Firestore is accessible
   try {
     const db = admin.firestore();
+    // Try to access a test document to confirm permissions are okay
     await db.collection("rateLimits").doc("test").get();
     return response
       .status(200)
