@@ -9,9 +9,9 @@
     "stripe": "^14.15.0",
     "resend": "^3.0.0"
   },
-  "engines": { 
-    "node": "18.x" 
-  }, 
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "build": "mkdir -p public && cp index.html public/index.html",
     "start": "echo \"This is a serverless function, run in Vercel\"",
